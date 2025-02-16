@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Búsqueda Parcial Asíncrona</title>
+</head>
+<body>
+  <h2>Buscar Información por Apellido (Búsqueda Parcial Asíncrona)</h2>
+  <input type="text" id="apellido" placeholder="Ingresa un apellido o parte del mismo">
+  <div id="resultado"></div>
+
+  <script>
+    const inputApellido = document.getElementById("apellido");
+    const resultadoDiv = document.getElementById("resultado");
+    let timeoutId;
+
+    // Función debounce para limitar la frecuencia de peticiones
+    function debounce(func, delay) {
+      return (...args) => {
+        clearTimeout(timeoutId);
+        timeoutId = setTimeout(() => {
+          func(...args);
+        }, delay);
+      };
+    }
+
+    // Función asíncrona para buscar y mostrar resultados
+    async function buscarApellido() {
+      const apellido = inputApellido.value;
+      if (!apellido.trim()) {
+        resultadoDiv.innerHTML = "";
+        return;
+      }
+      
+      try {
+        const response = await fetch(`/buscar?apellido=${encodeURIComponent(apellido)}`);
+        const data = await response.json();
+        resultadoDiv.innerHTML = "";
+
+        if (data.error) {
+          resultadoDiv.innerHTML = `<p style="color: red;">${data.error}</p>`;
+        } else if (data.mensaje) {
+          resultadoDiv.innerHTML = `<p>${data.mensaje}</p>`;
+        } else {
+          data.forEach(persona => {
+            resultadoDiv.innerHTML += `<p>${JSON.stringify(persona)}</p>`;
+          });
+        }
+      } catch (error) {
+        console.error("Error:", error);
+        resultadoDiv.innerHTML = `<p style="color: red;">Error al buscar datos</p>`;
+      }
+    }
+
+    // Envolver la función de búsqueda con debounce (por ejemplo, 300 ms)
+    const buscarDebounced = debounce(buscarApellido, 300);
+
+    // Evento para capturar la escritura en el input
+    inputApellido.addEventListener("input", buscarDebounced);
+  </script>
+</body>
+</html>
